@@ -49,3 +49,11 @@ type githubClient interface {
 func init() {
 	plugins.RegisterPullRequestEventHandler(pluginName, handleGenericComment, helpProvider)
 }
+
+func helpProvider(_ *plugins.Configuration, _ []config.OrgRepo) (*pluginhelp.PluginHelp, error) {
+	pluginHelp := &pluginhelp.PluginHelp{
+		Description: "The bug-triage plugin transfers an issue/PR to the Bug Triage project beta based on the state of the PR.",
+	}
+	return pluginHelp, nil
+}
+

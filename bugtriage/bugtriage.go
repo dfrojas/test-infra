@@ -47,19 +47,5 @@ type githubClient interface {
 }
 
 func init() {
-	plugins.RegisterGenericCommentHandler(pluginName, handleGenericComment, helpProvider)
-}
-
-func helpProvider(_ *plugins.Configuration, _ []config.OrgRepo) (*pluginhelp.PluginHelp, error) {
-	pluginHelp := &pluginhelp.PluginHelp{
-		Description: "The bug-triage plugin adds the PR to the Bug Triage project.",
-	}
-	pluginHelp.AddCommand(pluginhelp.Command{
-		Usage:       "/triage[-issue]",
-		Description: "Transfers a PR to the Bug Triage project.",
-		Featured:    true,
-		WhoCanUse:   "Org members.",
-		Examples:    []string{"/triage-1234"},
-	})
-	return pluginHelp, nil
+	plugins.RegisterPullRequestEventHandler(pluginName, handleGenericComment, helpProvider)
 }

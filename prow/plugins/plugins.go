@@ -167,6 +167,15 @@ func RegisterGenericCommentHandler(name string, fn GenericCommentHandler, help H
 	genericCommentHandlers[name] = fn
 }
 
+// PullRequestEventHandler defines the function contract for a github.PullRequestEventHandler handler.
+type PullRequestEventHandler func(Agent, github.PullRequestEvent) error
+
+// RegisterIssueCommentHandler registers a plugin's github.PullRequestEventHandler handler.
+func RegisterPullRequestEventHandler(name string, fn PullRequestEventHandler, help HelpProvider) {
+	pluginHelp[name] = help
+	pullRequestEventHandler[name] = fn
+}
+
 type PluginGitHubClient interface {
 	github.Client
 	Query(ctx context.Context, q interface{}, vars map[string]interface{}) error

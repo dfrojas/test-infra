@@ -47,7 +47,7 @@ type githubClient interface {
 }
 
 func init() {
-	plugins.RegisterPullRequestEventHandler(pluginName, handleGenericComment, helpProvider)
+	plugins.RegisterPullRequestEventHandler(pluginName, handleTransferIssueEvent, helpProvider)
 }
 
 func helpProvider(_ *plugins.Configuration, _ []config.OrgRepo) (*pluginhelp.PluginHelp, error) {
@@ -57,3 +57,10 @@ func helpProvider(_ *plugins.Configuration, _ []config.OrgRepo) (*pluginhelp.Plu
 	return pluginHelp, nil
 }
 
+func handleTransferIssueEvent(pc plugins.Agent, e github.PullRequestEvent) error {
+	return handleTransfer(pc.GitHubClient, pc.Logger, e)
+}
+
+func handleTransfer(gc githubClient, log *logrus.Entry, e github.PullRequestEvent) error {
+
+}

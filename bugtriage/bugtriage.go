@@ -1,3 +1,7 @@
+// This version is a draft. Still it needs:
+// * Error handlers and validations.
+// * Validate milestones events.
+
 /*
 Copyright 2022 The Kubernetes Authors.
 
@@ -14,8 +18,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package bugtriage implements the `/bug-triage` command which allows members of the org
-// to add PRs to the Bug Triage project.
+// Package bugtriage writes an issue/PR Bug Triage project based on events.
 package bugtriage
 
 import (
@@ -40,14 +43,12 @@ var (
 )
 
 type githubClient interface {
-	GetRepo(org, name string) (github.FullRepo, error)
-	CreateComment(org, repo string, number int, comment string) error
-	IsMember(org, user string) (bool, error)
+	GetPullRequest(org, repo string, number int) (github.PullRequest, error)
 	MutateWithGitHubAppsSupport(context.Context, interface{}, githubql.Input, map[string]interface{}, string) error
 }
 
 func init() {
-	plugins.RegisterPullRequestEventHandler(pluginName, handleTransferIssueEvent, helpProvider)
+	plugins.RegisterPullRequestEventHandler(pluginName, handlePullRequestEvent, helpProvider)
 }
 
 func helpProvider(_ *plugins.Configuration, _ []config.OrgRepo) (*pluginhelp.PluginHelp, error) {
@@ -57,10 +58,51 @@ func helpProvider(_ *plugins.Configuration, _ []config.OrgRepo) (*pluginhelp.Plu
 	return pluginHelp, nil
 }
 
-func handleTransferIssueEvent(pc plugins.Agent, e github.PullRequestEvent) error {
-	return handleTransfer(pc.GitHubClient, pc.Logger, e)
+func handlePullRequestEvent(pc plugins.Agent, e github.PullRequestEvent) error {
+	return handleaddProjectNextItem(pc.GitHubClient, pc.Logger, e)
 }
 
-func handleTransfer(gc githubClient, log *logrus.Entry, e github.PullRequestEvent) error {
+func containsEvent(events []github.PullRequestEvent, eventToFind github.PullRequestEvent) bool {
+	for _, e := range events {
+		if e == eventToFind {
+			return true
+		}
+	}
 
+	return false
+}
+
+func handleaddProjectNextItem(gc githubClient, log *logrus.Entry, e github.PullRequestEvent) error {
+	issueId := e.PullRequest.ID
+	eventAction := e.PullRequest.PullRequestEventAction
+	// List of PR events when it should to responds.
+	eventsToResponse: = []eventAction {
+    	eventAction.PullRequestActionReadyForReview,
+    	eventAction.PullRequestActionOpened,
+    	eventAction.PullRequestActionReopened,
+	}
+
+	if containsEvent(eventsToResponse, eventAction) {
+		addProjectNextItem(gc, issueId)
+	}
+
+	return nil
+}
+
+type addProjectNextItemMutation struct {
+	TransferIssue struct {
+		Issue struct {
+			URL githubql.URI
+		}
+	} `graphql:"addProjectNextItem(input: $input)"`
+}
+
+func addProjectNextItem(gc githubClient, issueId int) (*addProjectNextItemMutation, error) {
+	IAddProject := &addProjectNextItemMutation{}
+	input := githubql.AddProjectNextItemInput{
+		contentId: githubql.ID(issueId),
+		projectId: 6 // Bug Triage Project number of k8s.
+	}
+	err := gc.MutateWithGitHubAppsSupport(context.Background(), IAddProject, input, nil, nil)
+	return IAddProject, err
 }
